@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import type { Post, Period } from '../types';
+import { ref, computed } from 'vue'
+import type { Post, Period } from '../types'
 
 const periods: Period[] = [
     { id: 1, name: 'Today' },
     { id: 2, name: 'This Week' },
     { id: 3, name: 'This Month' },
 ]
-const selectedPeriod = ref<string>('Today')
-function selectPeriod(period: string) {
-    selectedPeriod.value = period
-}
+
+const selectedPeriod = ref('Today')
+const selectPeriod = (period: string) => selectedPeriod.value = period
+
 const posts: Post[] = [
     {
         id: 101,
@@ -22,18 +22,40 @@ const posts: Post[] = [
     {
         id: 102,
         title: 'Second Post: Weekly News',
-        content: 'An overview of the most important events in the tech world this week.',
+        content: 'An overview of this week.',
         periodId: 2,
         created: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
     },
     {
         id: 103,
         title: 'Third Post: Monthly Plans',
-        content: 'We have drafted a plan for developing new functionality for the next month.',
+        content: 'Next month plans.',
         periodId: 3,
-        created: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000),
+        created: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000),
     },
-];
+]
+
+const filteredPosts = computed(() => {
+    const now = new Date()
+
+    if (selectedPeriod.value === 'Today') {
+        return posts.filter(post =>
+            post.created.toDateString() === now.toDateString()
+        )
+    }
+
+    if (selectedPeriod.value === 'This Week') {
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+        return posts.filter(post => post.created >= weekAgo)
+    }
+
+    if (selectedPeriod.value === 'This Month') {
+        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+        return posts.filter(post => post.created >= monthAgo)
+    }
+
+    return posts
+})
 </script>
 
 <template>
@@ -44,13 +66,16 @@ const posts: Post[] = [
                 {{ period.name }}
             </a>
         </span>
-        <a v-for="post of posts" :key="post.id" class="panel-block">
+
+        <a v-for="post in filteredPosts" :key="post.id" class="panel-block">
             <div>
                 <a>{{ post.title }}</a>
-                <div>{{ post.created.toLocaleDateString('uk-UA', {
-                    day: 'numeric', month: 'short', year: 'numeric', hour:
-                        '2-digit', minute: '2-digit'
-                }) }}</div>
+                <div>
+                    {{ post.created.toLocaleString('uk-UA', {
+                        dateStyle: 'medium',
+                        timeStyle: 'short'
+                    }) }}
+                </div>
             </div>
         </a>
     </nav>
